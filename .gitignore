@@ -1,0 +1,14 @@
+/results/
+/figures/
+/data/
+/*.png
+/*.p
+/*.jpeg
+/*.npy
+/*.jpg
+/*.mp4
+/*.mp3
+/*.pyc
+/*.o
+/*.e
+

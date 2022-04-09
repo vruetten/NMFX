@@ -35,11 +35,11 @@ if __name__ == '__main__':
     print('\n')
 
     # number of components
-    max_iterations = 5000
+    max_iterations = 10000
     min_loss = 1e-4
     batch_size = 16
     step_size = 1e-2
-    print_iter = 500
+    print_iter = 10
 
     results_folder = '/Users/ruttenv/Documents/projects/nmfx/results/'
     results_folder = '/nrs/ahrens/Virginia_nrs/nmf_test'
@@ -75,18 +75,23 @@ if __name__ == '__main__':
        'H': jnp.asarray(H)
     } 
 
-    ### find W, H such that |X - W@H|^2 is minimized
+    schedule = optax.warmup_cosine_decay_schedule(
+        init_value=0.0,
+        peak_value=1.0,
+        warmup_steps=50,
+        decay_steps=1_000,
+        end_value=0.0,
+        )
 
+    ### find W, H such that |X - W@H|^2 is minimized
     # update_step = jax.jit(update_step_optax, static_argnums = (3,4,5))
 
     t0 = time()
-
     def fit(params: optax.Params, optimizer: optax.GradientTransformation) -> optax.Params:
         opt_state = optimizer.init(params)
-        
+        print('starting')
 
-
-        # @partial(jit, static_argnums=(3,4,5))  
+        @partial(jit, static_argnums=(3,4,5))  
         def update_step_optax(params, opt_state, X, batch_size, l1_loss_weight):
             loss, grads = batch_update_step(params, X, batch_size, l1_loss_weight)
             updates, opt_state = optimizer.update(grads, opt_state, params)
@@ -99,15 +104,17 @@ if __name__ == '__main__':
             losses.append(float(loss))
             if i % print_iter == 0:
                 t1 = time()
-                tdiff = np.round(t1-t0,3)
-                print(f"Iteration {i}, loss={loss}, time={tdiff}")
+                tdiff = np.round(t1-t0,2)
+                print(f"Iteration {i}, loss={np.round(loss,4)}, time={tdiff}min")
             if loss < min_loss:
                 print("Fitting converged!")
                 break
 
         return params
 
-    optimizer = optax.adam(learning_rate=1e-2)
+    
+
+    optimizer = optax.chain(optax.adamw(learning_rate=schedule))
     params = fit(initial_params, optimizer) 
     
 

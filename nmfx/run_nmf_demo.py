@@ -5,9 +5,15 @@ import os, sys, getopt
 from datetime import datetime
 from time import time
 sys.path.append('/Users/ruttenv/Documents/projects/nmfx/')
+sys.path.append('/groups/ahrens/home/ruttenv/python_packages/nmfx/')
 from nmf_funcs import *
 from nmfx.utils.plot_funcs import *
 from matplotlib import pyplot as pl
+import optax
+from jaxopt import ProjectedGradient
+from jaxopt.projection import projection_non_negative
+
+
 
 
 if __name__ == '__main__':
@@ -18,6 +24,7 @@ if __name__ == '__main__':
     except getopt.GetoptError:
         print ('run_nmf.py -k <knum> -l <l1_loss_weight>')
         sys.exit(2)
+
     print('\n')
     for opt, arg in opts:
         if opt == '-k':
@@ -36,6 +43,7 @@ if __name__ == '__main__':
     print_iter = 500
 
     results_folder = '/Users/ruttenv/Documents/projects/nmfx/results/'
+    results_folder = '/nrs/ahrens/Virginia_nrs/nmf_test'
     date = datetime.today().strftime('%y%m%d%H%M%S')
     experiment_name = date + f'_results_k_{k}_l1_loss_weight_{l1_loss_weight}'
     subfolder_path = results_folder +  experiment_name
@@ -62,13 +70,19 @@ if __name__ == '__main__':
     results['l1_loss_weight'] = l1_loss_weight
     results['step_size'] = step_size
     results['date'] = date
-    
+
+    initial_params = {
+       'W': jax.asarray(W),
+       'H': jax.asarray(H)
+    } 
 
     ### find W, H such that |X - W@H|^2 is minimized
 
     update_step = jax.jit(update_step, static_argnums = (3,4,5))
 
     t0 = time()
+
+    
     for i in range(max_iterations):
         W, H, loss = update_step(W, H, X, batch_size, l1_loss_weight, step_size)
         losses.append(float(loss))

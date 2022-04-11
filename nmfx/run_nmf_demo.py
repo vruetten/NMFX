@@ -72,19 +72,20 @@ if __name__ == '__main__':
     results['date'] = date
 
     initial_params = {
-       'W': jax.asarray(W),
-       'H': jax.asarray(H)
+       'W': jnp.asarray(W),
+       'H': jnp.asarray(H)
     } 
 
     ### find W, H such that |X - W@H|^2 is minimized
 
-    update_step = jax.jit(update_step, static_argnums = (3,4,5))
+    update_step = jax.jit(update_step, static_argnums = (2,3,4))
 
     t0 = time()
+    params = initial_params
 
     
     for i in range(max_iterations):
-        W, H, loss = update_step(W, H, X, batch_size, l1_loss_weight, step_size)
+        W, H, loss = update_step(params, X, batch_size, l1_loss_weight, step_size)
         losses.append(float(loss))
         if i % print_iter == 0:
             t1 = time()

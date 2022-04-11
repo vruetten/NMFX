@@ -43,7 +43,7 @@ def batch_update_step(params, X, batch_size, l1_loss_weight):
     # batch_X = X[indices]
     # batch_W = W[indices]
     batch_X = X
-    # params['W'] = batch_W
+    params['W'] = batch_W # not allowed
 
     loss, grad = jax.value_and_grad(compute_loss)(
         params,
@@ -55,9 +55,13 @@ def batch_update_step(params, X, batch_size, l1_loss_weight):
 
 
 
-def update_step(W, H, X, batch_size, l1_loss_weight, step_size):
+def update_step(params, X, batch_size, l1_loss_weight, step_size):
+
 
     print("Updating!!!")
+
+    W = params['W']
+    H = params['H']
 
     t, d = X.shape
 
@@ -66,13 +70,17 @@ def update_step(W, H, X, batch_size, l1_loss_weight, step_size):
     batch_X = X[indices]
     batch_W = W[indices]
 
+    batch_params = {}
+    batch_params['W'] = batch_W
+    batch_params['H'] = H
+
     loss, grad = jax.value_and_grad(compute_loss)(
-        (batch_W, H),
+        batch_params,
         batch_X,
         l1_loss_weight
     )
 
-    W_delta, H_delta = grad[0], grad[1]
+    W_delta, H_delta = grad['W'], grad['H']
 
 
     W = W.at[indices,:].set(batch_W - W_delta * step_size)

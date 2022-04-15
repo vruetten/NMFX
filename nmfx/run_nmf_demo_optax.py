@@ -42,7 +42,7 @@ if __name__ == '__main__':
     print_iter = 10
 
     results_folder = '/Users/ruttenv/Documents/projects/nmfx/results/'
-    results_folder = '/nrs/ahrens/Virginia_nrs/nmf_test'
+    results_folder = '/nrs/ahrens/Virginia_nrs/nmf_test/'
     date = datetime.today().strftime('%y%m%d%H%M%S')
     experiment_name = date + f'_results_k_{k}_l1_loss_weight_{l1_loss_weight}'
     subfolder_path = results_folder +  experiment_name

@@ -6,6 +6,39 @@ from jax.flatten_util import ravel_pytree
 import optax
 
 
+
+def compute_H_loss(params, batch_X, batch_W, l1_loss_weight):
+
+    H = params['H']
+    k, d = H.shape
+    H_pos = sigmoid(H)
+    batch_W_pos = sigmoid(batch_W)
+    
+    reconstruction = batch_W_pos @ H_pos
+
+    reconstruction_loss = ((reconstruction - batch_X)**2).mean()
+
+    l1_loss = jnp.abs(H_pos).sum() * l1_loss_weight/(d*k)
+
+    return reconstruction_loss + l1_loss
+
+def compute_batch_W_loss(params, batch_X, H, l1_loss_weight):
+
+    batch_W = params['W']
+    k, d = H.shape
+    H_pos = sigmoid(H)
+    batch_W_pos = sigmoid(batch_W)
+
+    reconstruction = batch_W_pos @ H_pos
+
+    reconstruction_loss = ((reconstruction - batch_X)**2).mean()
+
+    l1_loss = jnp.abs(H_pos).sum() * l1_loss_weight/(d*k)
+
+    return reconstruction_loss + l1_loss
+
+
+
 def compute_loss(params, X, l1_loss_weight):
 
     W = params['W']
@@ -43,7 +76,7 @@ def batch_update_step(params, X, batch_size, l1_loss_weight):
     # batch_X = X[indices]
     # batch_W = W[indices]
     batch_X = X
-    params['W'] = batch_W # not allowed
+    params['W'] = W # not allowed
 
     loss, grad = jax.value_and_grad(compute_loss)(
         params,

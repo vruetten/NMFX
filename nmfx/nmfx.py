@@ -9,6 +9,7 @@ import optax
 from .losses import compute_batch_H_loss
 from time import time
 from .losses import compute_W_loss
+from .updates import update_W_step
 
 
 
@@ -36,23 +37,12 @@ def nmf(X, k, parameters):
     optimizer_H = optax.adamw(learning_rate=schedule)
     opt_state_H = optimizer_H.init(H)
 
-    def update_W_step(W, opt_state_W, batch_X, batch_H, l1_W):
-            loss_W, grad_W = jax.value_and_grad(compute_W_loss)(
-                W,
-                batch_X,
-                batch_H,
-                l1_W
-            )
-            updates, opt_state_W = optimizer_W.update(grad_W, opt_state_W, W)
-            W = optax.apply_updates(W, updates)
-            return W, opt_state_W, loss_W
-
-    update_W_step_jit = jax.jit(update_W_step)
+    my_update_W_step = lambda W, opt_state_W, batch_X, batch_H, l1_W : update_W_step(W, optimizer_W, opt_state_W, batch_X, batch_H, l1_W)
+    update_W_step_jit = jax.jit(my_update_W_step)
     
     total_batch_num = np.int(np.round(t/parameters.batch_size))
     print(f'total batch num: {total_batch_num}')
     
-
     shuffled_indices = np.arange(t)
     t0 = time()
     for i in range(parameters.max_iter):

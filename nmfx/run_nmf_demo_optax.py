@@ -7,7 +7,7 @@ from time import time
 sys.path.append('/Users/ruttenv/Documents/projects/nmfx/')
 sys.path.append('/groups/ahrens/home/ruttenv/python_packages/nmfx/')
 from nmf_funcs import *
-from nmfx.utils.plot_funcs import *
+from nmfx.old_utils.plot_funcs import *
 from matplotlib import pyplot as pl
 import optax
 from functools import partial

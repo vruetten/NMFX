@@ -1,0 +1,46 @@
+import jax.numpy as jnp
+import numpy as np
+from nmfx import sigmoid
+from nmfx import nmf
+from nmfx.parameters import Parameters
+
+
+def generate_toydata(t, d, k):
+
+    H = sigmoid(np.random.randn(t, k))
+    W = sigmoid(np.random.randn(k, d))
+    
+    X0 = H@W
+    noise = np.random.randn(t, d)*0.001
+    
+    X = np.clip(0, 1, X0 + noise)
+
+    return X, H, W
+
+
+if __name__ == '__main__':
+
+    parameters = Parameters()
+    parameters.max_iter = 10000
+    parameters.min_loss = 1e-3
+    parameters.batch_size = 505
+    parameters.step_size = 1e-2
+    parameters.l1_W = 0
+
+    k = 20
+
+    # X = load_data()
+    t = 2000
+    d = 100
+
+    X, H_true, W_true = generate_toydata(t, d, k)
+    H, W = nmf(X, k, parameters)
+    W_diff = np.linalg.norm(W-W_true)
+    H_diff = np.linalg.norm(H-H_true)
+    print(f'l2 norm W diff {W_diff}')
+    print(f'l2 norm H diff {H_diff}')
+
+
+
+
+

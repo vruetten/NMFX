@@ -14,7 +14,7 @@ import getopt
 from datetime import datetime
 from time import time
 from nmf_funcs import *
-from nmfx.utils.plot_funcs import *
+from nmfx.old_utils.plot_funcs import *
 from matplotlib import pyplot as pl
 import optax
 from functools import partial

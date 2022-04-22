@@ -10,6 +10,8 @@ from .losses import compute_batch_H_loss
 from time import time
 from .losses import compute_W_loss
 from .updates import update_W_step
+from .updates import update_W_batch_H_step
+from jax import random
 
 
 
@@ -37,41 +39,22 @@ def nmf(X, k, parameters):
     optimizer_H = optax.adamw(learning_rate=schedule)
     opt_state_H = optimizer_H.init(H)
 
-    my_update_W_step = lambda W, opt_state_W, batch_X, batch_H, l1_W : update_W_step(W, optimizer_W, opt_state_W, batch_X, batch_H, l1_W)
-    update_W_step_jit = jax.jit(my_update_W_step)
+
+    update_W_batch_H_step_jit = jax.jit(update_W_batch_H_step, static_argnames=['optimizer_W', 'total_batch_num', 'parameters'])
     
     total_batch_num = np.int(np.round(t/parameters.batch_size))
     print(f'total batch num: {total_batch_num}')
     
-    shuffled_indices = np.arange(t)
+    
     t0 = time()
+
+    key = random.PRNGKey(42)
     for i in range(parameters.max_iter):
-        # shuffle all indices and chunk data into batches
-        np.random.shuffle(shuffled_indices)
-        # inner loop
-        grad_H_batches = []     
-        for j in range(total_batch_num):
-            batch_indices = shuffled_indices[j*parameters.batch_size:(j+1)*parameters.batch_size]
-            # batch_indices = shuffled_batch_indices[j]
-            batch_X = X[batch_indices]
-            batch_H = H[batch_indices]
-
-            # get batch_H grad using batch_X and H
-            grad_H_batch = jax.grad(compute_batch_H_loss)(
-                batch_H,
-                batch_X,
-                W,
-                parameters.l1_W
-            )
-
-            # update H using batch_X and batch_H
-            W, opt_state_W, loss_batch = update_W_step_jit(W, opt_state_W, batch_X, batch_H, parameters.l1_W)
+        key, shuffle_key = random.split(key)
+        
+        W, opt_state_W, grad_H, loss_batch = update_W_batch_H_step_jit(X, H, W, optimizer_W, opt_state_W, opt_state_H, parameters, total_batch_num, shuffle_key)
             
-            log.total_loss.append(loss_batch)
-            grad_H_batches.append(grad_H_batch)
-
-        grad_H_batches = np.vstack(grad_H_batches)
-        grad_H = grad_H_batches[np.argsort(shuffled_indices).squeeze()]
+        log.total_loss.append(loss_batch)
         
         updates_H, opt_state_H = optimizer_H.update(grad_H, opt_state_H, H)
         H = optax.apply_updates(H, updates_H)

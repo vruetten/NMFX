@@ -11,7 +11,7 @@ def generate_toydata(t, d, k):
     W = sigmoid(np.random.randn(k, d))
     
     X0 = H@W
-    noise = np.random.randn(t, d)*0.001
+    noise = np.random.randn(t, d)*0.01
     
     X = np.clip(0, 1, X0 + noise)
 
@@ -27,16 +27,16 @@ if __name__ == '__main__':
     parameters.step_size = 1e-2
     parameters.l1_W = 0
 
-    k = 20
+    k = 50
 
     # X = load_data()
-    t = 2000
-    d = 100
+    t = 20000
+    d = 1000
 
     X, H_true, W_true = generate_toydata(t, d, k)
     H, W = nmf(X, k, parameters)
-    W_diff = np.linalg.norm(W-W_true)
-    H_diff = np.linalg.norm(H-H_true)
+    W_diff = np.linalg.norm(W-W_true)/t/d
+    H_diff = np.linalg.norm(H-H_true)/t/d
     print(f'l2 norm W diff {W_diff}')
     print(f'l2 norm H diff {H_diff}')
 

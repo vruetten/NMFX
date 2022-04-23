@@ -15,5 +15,8 @@ setup(
             'numpy',
             'jax',
             'tqdm'
+        ],
+        scripts=[
+            'scripts/nmfx'
         ]
 )

@@ -27,3 +27,4 @@ class Log():
         self.l1_loss_W = []
         self.reconstruction_loss = []
         self.total_loss = []
+

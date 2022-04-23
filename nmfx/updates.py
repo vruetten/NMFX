@@ -18,10 +18,11 @@ def update_W_step(W, optimizer_W, opt_state_W, batch_X, batch_H, l1_W):
 
 
 def update_W_batch_H_step(X, H, W, optimizer_W, opt_state_W, opt_state_H, parameters, total_batch_num, shuffle_key):
+    print('compiling update function')
     t, d = X.shape
     
     shuffled_indices = jnp.arange(t)
-    random.shuffle(shuffle_key, shuffled_indices)
+    random.permutation(shuffle_key, shuffled_indices)
 
     grad_H_batches = [] 
     for j in range(total_batch_num):

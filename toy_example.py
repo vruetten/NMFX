@@ -34,7 +34,7 @@ if __name__ == '__main__':
     d = 1000
 
     X, H_true, W_true = generate_toydata(t, d, k)
-    H, W = nmf(X, k, parameters)
+    H, W, log = nmf(X, k, parameters)
     W_diff = np.linalg.norm(W-W_true)/t/d
     H_diff = np.linalg.norm(H-H_true)/t/d
     print(f'l2 norm W diff {W_diff}')

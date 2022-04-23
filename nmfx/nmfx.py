@@ -53,7 +53,7 @@ def nmf(X, k, parameters):
         key, shuffle_key = random.split(key)
         
         W, opt_state_W, grad_H, loss_batch = update_W_batch_H_step_jit(X, H, W, optimizer_W, opt_state_W, opt_state_H, parameters, total_batch_num, shuffle_key)
-            
+        loss_batch = float(loss_batch) 
         log.total_loss.append(loss_batch)
         
         updates_H, opt_state_H = optimizer_H.update(grad_H, opt_state_H, H)
@@ -70,7 +70,7 @@ def nmf(X, k, parameters):
     H = sigmoid(H)
     W = sigmoid(W)
     
-    return H, W
+    return H, W, log
 
 
 

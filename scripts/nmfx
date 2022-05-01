@@ -96,8 +96,6 @@ X_min = np.min(X)
 if X_min<0: 
     print(f'xmin: {X_min}')
     X -= X_min # force to positive values
-X_max = np.max(X)
-X /= X_max
 
 ### run nmfx
 H, W, log = nmfx.nmf(X, args.k, parameters)

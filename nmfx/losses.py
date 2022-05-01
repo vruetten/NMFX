@@ -1,12 +1,13 @@
 import jax.numpy as jnp
 from .utils import sigmoid
-
+from .utils import log1pexp
 
 def compute_W_loss(W, batch_X, batch_H, l1_W):
 
     k, d = W.shape
-    W_pos = sigmoid(W)
-    batch_H_pos = sigmoid(batch_H)
+
+    W_pos = log1pexp(W)
+    batch_H_pos = log1pexp(batch_H)
     
     reconstruction = batch_H_pos @ W_pos
 
@@ -20,8 +21,9 @@ def compute_W_loss(W, batch_X, batch_H, l1_W):
 def compute_batch_H_loss(batch_H, batch_X, W, l1_W):
 
     k, d = W.shape
-    W_pos = sigmoid(W)
-    batch_H_pos = sigmoid(batch_H)
+    
+    W_pos = log1pexp(W)
+    batch_H_pos = log1pexp(batch_H)
     
     reconstruction = batch_H_pos @ W_pos
 

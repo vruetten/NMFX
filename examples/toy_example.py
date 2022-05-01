@@ -1,6 +1,6 @@
 import jax.numpy as jnp
 import numpy as np
-from nmfx import sigmoid
+from nmfx import sigmoid, log1pexp
 from nmfx import nmf
 from nmfx.parameters import Parameters
 
@@ -16,6 +16,16 @@ def generate_toydata(t, d, k):
     X = np.clip(0, 1, X0 + noise)
 
     return X, H, W
+
+def generate_toydata(t, d, k):
+    from nmfx.utils import sigmoid, log1pexp
+    H = log1pexp(np.random.randn(t, k))
+    W = log1pexp(np.random.randn(k, d))
+    
+    X0 = H@W
+    noise = np.random.randn(t, d)*0.001
+    X = np.clip(X0 + noise, a_min=0)
+    return np.array(X), np.array(H), np.array(W)
 
 
 if __name__ == '__main__':

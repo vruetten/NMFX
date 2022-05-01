@@ -5,6 +5,7 @@ from .losses import compute_batch_H_loss
 from jax import random
 import jax.numpy as jnp
 
+
 def update_W_step(W, optimizer_W, opt_state_W, batch_X, batch_H, l1_W):
         loss_W, grad_W = jax.value_and_grad(compute_W_loss)(
             W,

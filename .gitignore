@@ -3,6 +3,7 @@
 .DS_Store
 /results/
 /figures/
+*/archive/
 /data/
 *.png
 *.p
@@ -14,5 +15,6 @@
 *.pyc
 *.o
 *.e
+*.ipynb_*
 self_notes.md
 /nmfx.egg-info/

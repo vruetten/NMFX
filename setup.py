@@ -17,6 +17,7 @@ setup(
             'tqdm'
         ],
         scripts=[
-            'scripts/nmfx'
+            'scripts/nmfx',
+            'scripts/nmfx_hdf5'
         ]
 )

@@ -1,4 +1,5 @@
 import jax.numpy as jnp
+import jax
 import numpy as np
 from nmfx import sigmoid
 from nmfx import nmf
@@ -21,6 +22,8 @@ def generate_toydata(t, d, k):
 
 if __name__ == '__main__':
 
+    print("Device:", jax.default_backend())
+
     parameters = Parameters()
     parameters.max_iter = 10000
     parameters.min_loss = 1e-3
@@ -35,11 +38,13 @@ if __name__ == '__main__':
 
     data_path = '/nrs/ahrens/Virginia_nrs/nmfx_tests/data.npy'
     results_path = '/nrs/ahrens/Virginia_nrs/nmfx_tests/results.npy'
+    
 
     X, H_true, W_true = generate_toydata(t, d, k)
     np.save(data_path, X)
 
-    cmd = f'nmfx --data_path {data_path} --save_path {results_path} -k {k}'
+    # cmd = f'nmfx --data_path {data_path} --save_path {results_path} -k {k} '
+    cmd = f'python ./scripts/nmfx --data_path {data_path} --save_path {results_path} -k {k} '
     print(cmd)
     os.system(cmd)
 

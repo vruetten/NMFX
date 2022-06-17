@@ -100,7 +100,6 @@ if X_min<0:
 ### run nmfx
 H, W, log = nmfx.nmf(X, args.k, parameters)
 
-
 results['H'] = H
 results['W'] = W
 results['loss'] = log.total_loss

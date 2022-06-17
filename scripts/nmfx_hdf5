@@ -12,9 +12,8 @@ warnings.filterwarnings('ignore')
 from time import time
 from nmfx import get_subfolders
 from datetime import datetime
-
 from zfish.image import imclass as im
-
+import re
 
 parser = argparse.ArgumentParser()
 
@@ -86,6 +85,20 @@ parser.add_argument(
     help="step size")
 
 parser.add_argument(
+    '--print_iter',
+    '-pi',
+    type=int,
+    default=100,
+    help="print iter")
+
+parser.add_argument(
+    '--save_iter',
+    '-si',
+    type=int,
+    default=200,
+    help="save iter")
+
+parser.add_argument(
     '--save_path',
     '-sp',
     type=str,
@@ -104,7 +117,8 @@ parameters.batch_size = args.batch_size
 parameters.step_size = args.step_size
 parameters.min_diff = args.min_diff
 
-print_iter = 20
+print_iter = args.print_iter
+save_iter = args.save_iter
 
 ### initialize results dictionary
 results = vars(parameters)
@@ -136,6 +150,8 @@ else:
 
 date = datetime.today().strftime('%y%m%d_%H%M%S')
 experiment_name = date + f'_results_k_{args.k}_l1_loss_weight_{args.l1_W}'
+experiment_name = re.sub(r'([.?!]+) *', r'p', experiment_name)
+
 subfolder_path = save_path +  experiment_name
 os.mkdir(subfolder_path)
 results_path = subfolder_path + '/' + experiment_name
@@ -143,8 +159,19 @@ results_path = subfolder_path + '/' + experiment_name
 
 val_dict = np.load(dpath, allow_pickle = True).item()
 valid_inds = val_dict['valid_inds']
-tmax = val_dict['tvalidmax']
 print('loaded valid cells')
+
+keys = list(val_dict.keys())
+if 'valid_tpts' in keys:
+    print('censored timepoints found')
+    valid_timepoints = val_dict['valid_tpts']
+    nonvalid_timepoints = val_dict['bad_tpts'] 
+    full_tpts_nan = val_dict['full_tpts_nan']
+else:
+    valid_timepoints = None
+    nonvalid_timepoints = None
+    full_tpts_nan = None
+
 
 
 ### load data
@@ -152,17 +179,26 @@ t0 = time()
 mk = im.Mika(dirs = dirs, ch = args.channel_number)
 dims = mk.dims
 print('loading data...')
+if valid_timepoints is None:
+    valid_timepoints = np.arange(mk.t)
 
-try:
-    fpath = dirs['ephys'] + 'X.npy'
+fpath = dirs['ephys'] + 'X' + str(args.channel_number) + '.npy'
+
+ 
+if os.path.isfile(fpath):
+    print('found existing data')    
     X = np.load(fpath)  
-except:
+else:
     mk.load_celldata()
-    X = mk.df[valid_inds].T
+    X = mk.df[:, valid_timepoints]
+    X = X[valid_inds].T
+    print('data loaded')
+    np.save(fpath, X)
+    print('saved reduced data for the future')
 
 t1 = time()
-tdiff = np.round(t1-t0)/60
-print(f'loaded data in {tdiff}mins')
+tdiff = np.round((t1-t0)/60, 3)
+print(f'loaded data in {tdiff} mins')
 
 t, d, = X.shape
 print('data loaded')
@@ -170,6 +206,9 @@ print(f't: {t}, d: {d}')
 
 results['t'] = t
 results['d'] = d
+results['valid_timepoints'] = valid_timepoints
+results['full_tpts_nan'] = full_tpts_nan
+results['valid_inds'] = valid_inds
 
 
 ### ensure data is positive
@@ -179,9 +218,11 @@ if X_min<0:
     X -= X_min # force to positive values
 
 ### run nmfx
-H, W, log = nmfx.nmf(X[::10], args.k, parameters, print_iter)
+H, W, log = nmfx.nmf(X, args.k, parameters, print_iter = print_iter, save_iter = save_iter, save_path = results_path, initial_values= None)
 t1 = time()
 tdiff = np.round(t1-t0)/60
+
+print(f'total execution time: {tdiff}')
 
 results['H'] = H
 results['W'] = W

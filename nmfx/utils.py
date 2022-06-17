@@ -11,12 +11,12 @@ def sigmoid(Z):
 
 
 def order_factors(H, W):
-    from numpy.linalg import norm
+    import numpy as np
     from numpy import argsort
-    Hnorm = norm(H, axis = 0)
-    Wnorm = norm(W, axis = 1)
-    W /= Wnorm[:,None]
-    H *= Wnorm[None]
+    Hnorm = np.linalg.norm(H, axis = 0)
+    Wnorm = np.linalg.norm(W, axis = 1)
+    # W /= Wnorm[:,None]
+    # H *= Wnorm[None]
     Knorm = Hnorm*Wnorm
     order = argsort(Knorm)[::-1]
     H = H[:,order]

@@ -17,15 +17,39 @@ class Parameters():
         children = (self.l1_W, self.max_iter, self.min_loss, self.batch_size, self.step_size, self.min_diff)
         aux_data = None
         return (children, aux_data)
+
+    @classmethod
+    def tree_unflatten(cls, aux_data, children):
+        return cls(*children)
+
+@register_pytree_node_class
+class IterationLog():
+
+    def __init__(self, l1_loss_W=None, l1_loss_H=None, recon_loss=None,
+            total_loss=None):
+
+        self.l1_loss_W = l1_loss_W
+        self.l1_loss_H = l1_loss_H
+        self.reconstruction_loss = recon_loss
+        self.total_loss = total_loss
+
+    def tree_flatten(self):
+
+        children = (self.l1_loss_W, self.l1_loss_H,
+                    self.reconstruction_loss, self.total_loss)
+        aux_data = None
+        return (children, aux_data)
     
     @classmethod
     def tree_unflatten(cls, aux_data, children):
         return cls(*children)
 
+class FittingLog():
 
-class Log():
     def __init__(self,):
+
         self.l1_loss_W = []
+        self.l1_loss_H = []
         self.reconstruction_loss = []
         self.total_loss = []
         self.grad_norm = []

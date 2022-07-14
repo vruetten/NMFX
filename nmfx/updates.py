@@ -7,15 +7,17 @@ import jax.numpy as jnp
 
 
 def update_W_step(W, optimizer_W, opt_state_W, batch_X, batch_H, l1_W):
-        loss_W, grad_W = jax.value_and_grad(compute_W_loss)(
+
+    (total_loss, iteration_log), grad_W = jax.value_and_grad(compute_W_loss, has_aux=True)(
             W,
             batch_X,
             batch_H,
             l1_W
-        )
-        updates, opt_state_W = optimizer_W.update(grad_W, opt_state_W, W)
-        W = optax.apply_updates(W, updates)
-        return W, opt_state_W, loss_W
+    )
+    updates, opt_state_W = optimizer_W.update(grad_W, opt_state_W, W)
+    W = optax.apply_updates(W, updates)
+
+    return W, opt_state_W, iteration_log
 
 
 def update_W_batch_H_step(X, H, W, optimizer_W, opt_state_W, opt_state_H, parameters, total_batch_num, shuffle_key):
@@ -31,18 +33,17 @@ def update_W_batch_H_step(X, H, W, optimizer_W, opt_state_W, opt_state_H, parame
         batch_X = X[batch_indices]
         batch_H = H[batch_indices]
 
-        grad_H_batch = jax.grad(compute_batch_H_loss)(
+        grad_H_batch, _ = jax.grad(compute_batch_H_loss, has_aux=True)(
             batch_H,
             batch_X,
             W,
             parameters.l1_W
         )
 
-        W, opt_state_W, loss_batch = update_W_step(W, optimizer_W, opt_state_W, batch_X, batch_H, parameters.l1_W)
+        W, opt_state_W, iteration_log = update_W_step(W, optimizer_W, opt_state_W, batch_X, batch_H, parameters.l1_W)
         grad_H_batches.append(grad_H_batch)
 
     grad_H_batches = jnp.vstack(grad_H_batches)
     grad_H = grad_H_batches[jnp.argsort(shuffled_indices).squeeze()]
 
-    return W, opt_state_W, grad_H, loss_batch 
-    
+    return W, opt_state_W, grad_H, iteration_log

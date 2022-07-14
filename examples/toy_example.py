@@ -1,8 +1,8 @@
 import jax.numpy as jnp
 import numpy as np
-from nmfx import sigmoid, log1pexp
 from nmfx import nmf
 from nmfx.parameters import Parameters
+from nmfx.utils import sigmoid, log1pexp
 
 
 def generate_toydata(t, d, k):
@@ -24,7 +24,7 @@ def generate_toydata(t, d, k):
     
     X0 = H@W
     noise = np.random.randn(t, d)*0.001
-    X = np.clip(X0 + noise, a_min=0)
+    X = np.clip(X0 + noise, a_min=0, a_max=1)
     return np.array(X), np.array(H), np.array(W)
 
 

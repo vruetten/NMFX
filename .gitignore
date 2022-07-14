@@ -18,3 +18,4 @@
 *.ipynb_*
 self_notes.md
 /nmfx.egg-info/
+.coverage

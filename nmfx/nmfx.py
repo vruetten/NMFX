@@ -8,7 +8,7 @@ import optax
 from sklearn.decomposition._nmf import _initialize_nmf as initialize_nmf
 
 from .utils import sigmoid, log1pexp, order_factors
-from .parameters import Log
+from .parameters import IterationLog, FittingLog
 from .initialize import initialize
 from .losses import compute_batch_H_loss
 from .losses import compute_W_loss
@@ -40,7 +40,7 @@ def nmf(X, k, parameters, print_iter = 20, initial_values = None, save_iter = No
         print('H & W initialized with given initial values')
 
 
-    log = Log()
+    fitting_log = FittingLog()
 
     ### optimizers
     optimizer_W = optax.adam(learning_rate = parameters.step_size)
@@ -62,13 +62,18 @@ def nmf(X, k, parameters, print_iter = 20, initial_values = None, save_iter = No
     try:
         for i in range(parameters.max_iter):
             key, shuffle_key = random.split(key)
-            
-            W, opt_state_W, grad_H, loss_batch = update_W_batch_H_step_jit(X, H, W, optimizer_W, opt_state_W, opt_state_H, parameters, total_batch_num, shuffle_key)
-            loss_batch = float(loss_batch) 
+
+            W, opt_state_W, grad_H, iteration_log = \
+            update_W_batch_H_step_jit(X, H, W, optimizer_W, opt_state_W,
+                    opt_state_H, parameters, total_batch_num, shuffle_key)
             grad_norm = np.linalg.norm(grad_H)
-            log.total_loss.append(loss_batch)
-            log.grad_norm.append(grad_norm)
-            
+
+            # logging
+            fitting_log.reconstruction_loss.append(iteration_log.reconstruction_loss)
+            fitting_log.l1_loss_W.append(iteration_log.l1_loss_W)
+            fitting_log.total_loss.append(iteration_log.total_loss)
+            fitting_log.grad_norm.append(grad_norm)
+
             updates_H, opt_state_H = optimizer_H.update(grad_H, opt_state_H, H)
             H = optax.apply_updates(H, updates_H)
             H_diff = np.linalg.norm(H-H_prev)/k/t*1e5
@@ -77,7 +82,10 @@ def nmf(X, k, parameters, print_iter = 20, initial_values = None, save_iter = No
             t1 = time()
             tdiff = np.round(t1-t0,2)/60
 
-            statement = f"Iteration {i}, loss={np.round(loss_batch,10)}, h_diff={np.round(H_diff,7)}, grad_norm={np.round(grad_norm,10)}, time={np.round(tdiff,4)}min" 
+            statement = f"Iteration {i}, \
+            total_loss={np.round(iteration_log.total_loss,10)} \
+            h_diff={np.round(H_diff,7)}, grad_norm={np.round(grad_norm,10)}, \
+            time={np.round(tdiff,4)}min"
 
             if i % print_iter == 0:    
                 print(statement)
@@ -91,11 +99,11 @@ def nmf(X, k, parameters, print_iter = 20, initial_values = None, save_iter = No
                     results['H'] = log1pexp(H_)
                     results['W'] = log1pexp(W_)
                     results['ite'] = i 
-                    results['loss'] = log.total_loss
+                    results['loss'] = iteration_log.total_loss
                     np.save(save_path + f'_ite_{i:05d}.npy', results)
                     print('intermediate results saved')
 
-            if loss_batch < parameters.min_loss:
+            if iteration_log.total_loss < parameters.min_loss:
                 print(statement)
                 print("Fitting converged!")
                 break
@@ -120,9 +128,5 @@ def nmf(X, k, parameters, print_iter = 20, initial_values = None, save_iter = No
     ### normalize and order factors by norm
     H, W = order_factors(H, W)
     
-    return np.array(H), np.array(W), log
-
-
-
-
+    return np.array(H), np.array(W), fitting_log
 

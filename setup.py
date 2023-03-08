@@ -6,7 +6,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name="nmfx",
-    version="0.1",
+    version="0.11",
     description="Stochastic Non-Negative Matrix Factorization",
     url="https://github.com/vrutten/nmfx",
     author="Virginia MS Rutten, Jan Funke",

@@ -8,6 +8,7 @@ class Parameters:
     def __init__(
         self,
         l1_W=0.0,
+        l2_space=0.0,
         max_iter=10000,
         min_loss=1e-5,
         batch_size=20,
@@ -15,6 +16,7 @@ class Parameters:
         min_diff=1e-7,
     ):
         self.l1_W = l1_W
+        self.l2_space = l2_space
         self.max_iter = max_iter
         self.min_loss = min_loss
         self.batch_size = batch_size
@@ -24,6 +26,7 @@ class Parameters:
     def tree_flatten(self):
         children = (
             self.l1_W,
+            self.l2_space,
             self.max_iter,
             self.min_loss,
             self.batch_size,

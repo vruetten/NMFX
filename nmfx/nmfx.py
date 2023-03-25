@@ -7,7 +7,7 @@ from time import time
 import optax
 from sklearn.decomposition._nmf import _initialize_nmf as initialize_nmf
 
-from .utils import sigmoid, log1pexp, order_factors
+from .utils import sigmoid, log1pexp, order_factors, logexpm1
 from .parameters import Log
 from .initialize import initialize, initialize_taus
 from .losses import compute_batch_H_loss, compute_spatial_loss_coefficients
@@ -48,18 +48,21 @@ def nmf(
         print("intializing values with nnsvd")
         t0 = time()
         H, W = initialize_nmf(X, k, "nndsvd")
+        H = logexpm1(H)
+        W = logexpm1(W)
         t1 = time()
         print(f"time: {np.round((t1-t0)/60,4)}mins")
     else:
-        H = initial_values["H"]
-        W = initial_values["W"]
+        H = logexpm1(initial_values["H"])
+        W = logexpm1(initial_values["W"])
         print("H & W initialized with given initial values")
 
     if coordinates is not None:
         if taus is not None:
             taus = initialize_taus(k)  # initialize
         spatial_loss_coefficients = compute_spatial_loss_coefficients(taus, coordinates)
-
+    else:
+        spatial_loss_coefficients = None
     log = Log()
 
     ### optimizers
@@ -89,7 +92,7 @@ def nmf(
         for i in range(parameters.max_iter):
             key, shuffle_key = random.split(key)
 
-            W, opt_state_W, grad_H, loss_batch = update_W_batch_H_step_jit(
+            W, opt_state_W, grad_H, loss_batch = update_W_batch_H_step(
                 X,
                 H,
                 W,

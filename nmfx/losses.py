@@ -32,7 +32,7 @@ def compute_spatial_loss_coefficients(taus, coordinates) -> jnp.array:
     return dist_coef
 
 
-def compute_W_loss(W, batch_X, batch_H, l1_W, spatial_loss_coefficients=None):
+def compute_W_loss(W, batch_X, batch_H, parameters, spatial_loss_coefficients=None):
 
     k, d = W.shape
     t, _ = batch_X.shape
@@ -44,19 +44,24 @@ def compute_W_loss(W, batch_X, batch_H, l1_W, spatial_loss_coefficients=None):
 
     reconstruction_loss = jnp.linalg.norm(reconstruction - batch_X) / t / d
 
-    l1_loss = jnp.abs(W_pos).mean() * l1_W
+    l1_loss = jnp.abs(W_pos).mean() * parameters.l1_W
 
     loss = reconstruction_loss + l1_loss
 
     if spatial_loss_coefficients is not None:
         w_dist = (W_pos[:, None] - W_pos[:, :, None]) ** 2
-        spatial_penalty = (spatial_loss_coefficients * w_dist).sum()
+        spatial_penalty = (
+            (spatial_loss_coefficients * w_dist).sum() / k / d * parameters.l2_space
+        )
+        # print(f"spatial_penalty: {spatial_penalty}")
         loss += spatial_penalty
 
     return loss
 
 
-def compute_batch_H_loss(batch_H, batch_X, W, l1_W, spatial_loss_coefficients=None):
+def compute_batch_H_loss(
+    batch_H, batch_X, W, parameters, spatial_loss_coefficients=None
+):
 
     k, d = W.shape
     t, _ = batch_X.shape
@@ -68,13 +73,15 @@ def compute_batch_H_loss(batch_H, batch_X, W, l1_W, spatial_loss_coefficients=No
 
     reconstruction_loss = jnp.linalg.norm(reconstruction - batch_X) / t / d
 
-    l1_loss = jnp.abs(W_pos).mean() * l1_W
+    l1_loss = jnp.abs(W_pos).mean() * parameters.l1_W
 
     loss = reconstruction_loss + l1_loss
 
     if spatial_loss_coefficients is not None:
         w_dist = (W_pos[:, None] - W_pos[:, :, None]) ** 2
-        spatial_penalty = (spatial_loss_coefficients * w_dist).sum()
+        spatial_penalty = (
+            (spatial_loss_coefficients * w_dist).sum() / k / d * parameters.l2_space
+        )
         loss += spatial_penalty
 
     return loss

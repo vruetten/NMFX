@@ -1,6 +1,7 @@
 import jax.numpy as jnp
 from jax.numpy.linalg import cholesky
 from jax.scipy.linalg import solve_triangular
+import numpy as np
 
 ######## KERNEL FUNCTIONS  #########
 
@@ -32,10 +33,11 @@ def build_K(x0: jnp.array, x1: jnp.array, param) -> jnp.array:
     return K
 
 
-def compute_wKiw(Kxx: jnp.array, w: jnp.array) -> jnp.float:
+def compute_wKiw(Kxx: jnp.array, w: jnp.array):
     """Compute wKiw
 
     K = LL^T where L is lower triangular matrix
+
     w^TKiw = (Liw)^T(Liw)
     Let: z = Liw
     Then: Lz = w
@@ -45,3 +47,11 @@ def compute_wKiw(Kxx: jnp.array, w: jnp.array) -> jnp.float:
     z = solve_triangular(L, w, lower=True)
     wKiw = z.T @ z
     return wKiw
+
+
+def sample_from_K(Kxx: jnp.array) -> np.array:
+    import numpy as np
+    n = Kxx.shape[0]
+    L = cholesky(Kxx)
+    x = np.random.randn(n)
+    return L.T @ x

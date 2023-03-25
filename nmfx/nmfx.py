@@ -10,22 +10,29 @@ from sklearn.decomposition._nmf import _initialize_nmf as initialize_nmf
 from .utils import sigmoid, log1pexp, order_factors
 from .parameters import Log
 from .initialize import initialize, initialize_taus
-from .losses import compute_batch_H_loss
+from .losses import compute_batch_H_loss, compute_spatial_loss_coefficients
 from .losses import compute_W_loss
 from .updates import update_W_step
-from .updates import update_W_batch_H_step, update_taus_step
+from .updates import update_W_batch_H_step
 
 
 def nmf(
     X,
     k,
     parameters,
+    taus=None,
     coordinates=None,
     print_iter=20,
     initial_values=None,
     save_iter=None,
     save_path=None,
 ):
+    """NMF
+
+    Parameters
+    X: txd
+    coordinates: d x 3
+    """
     t, d = X.shape
     X_min = np.min(X)
 
@@ -49,7 +56,9 @@ def nmf(
         print("H & W initialized with given initial values")
 
     if coordinates is not None:
-        taus = initialize_taus(k)  # initialize
+        if taus is not None:
+            taus = initialize_taus(k)  # initialize
+        spatial_loss_coefficients = compute_spatial_loss_coefficients(taus, coordinates)
 
     log = Log()
 
@@ -60,17 +69,14 @@ def nmf(
     optimizer_H = optax.adam(learning_rate=parameters.step_size)
     opt_state_H = optimizer_H.init(H)
 
-    optimizer_taus = optax.adam(learning_rate=parameters.step_size)
-    opt_state_taus = optimizer_taus.init(taus)
-
     update_W_batch_H_step_jit = jax.jit(
         update_W_batch_H_step,
-        static_argnames=["optimizer_W", "total_batch_num", "parameters", "coordinates"],
-    )
-
-    update_taus_step_jit = jax.jit(
-        update_taus_step,
-        static_argnames=["optimizer_taus", "parameters", "coordinates"],
+        static_argnames=[
+            "optimizer_W",
+            "total_batch_num",
+            "parameters",
+            "spatial_loss_coefficients",
+        ],
     )
 
     H_prev = np.copy(H)
@@ -88,13 +94,12 @@ def nmf(
                 X,
                 H,
                 W,
-                taus,
+                spatial_loss_coefficients,
                 optimizer_W,
                 opt_state_W,
                 opt_state_H,
                 parameters,
                 total_batch_num,
-                coordinates,
                 shuffle_key,
             )  # go through each batch, update W at each step and compute and store gradients of H w.r.t. to current W
             loss_batch = float(loss_batch)
@@ -106,10 +111,6 @@ def nmf(
             H = optax.apply_updates(H, updates_H)
             H_diff = np.linalg.norm(H - H_prev) / k / t * 1e5
             H_prev = np.copy(H)
-
-            taus, opt_state_taus, loss_taus = update_taus_step_jit(
-                taus, optimizer_taus, opt_state_taus, W, X, H, parameters, coordinates
-            )
 
             t1 = time()
             tdiff = np.round(t1 - t0, 2) / 60

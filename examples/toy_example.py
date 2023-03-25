@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 import numpy as np
-from nmfx import sigmoid, log1pexp
-from nmfx import nmf
+from nmfx.utils import sigmoid, log1pexp
+# from nmfx import nmf
 from nmfx.parameters import Parameters
 
 

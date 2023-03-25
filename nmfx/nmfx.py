@@ -75,7 +75,6 @@ def nmf(
             "optimizer_W",
             "total_batch_num",
             "parameters",
-            "spatial_loss_coefficients",
         ],
     )
 

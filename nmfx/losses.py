@@ -70,9 +70,11 @@ def compute_batch_H_loss(batch_H, batch_X, W, l1_W, spatial_loss_coefficients=No
 
     l1_loss = jnp.abs(W_pos).mean() * l1_W
 
+    loss = reconstruction_loss + l1_loss
+
     if spatial_loss_coefficients is not None:
         w_dist = (W_pos[:, None] - W_pos[:, :, None]) ** 2
         spatial_penalty = (spatial_loss_coefficients * w_dist).sum()
         loss += spatial_penalty
 
-    return reconstruction_loss + l1_loss
+    return loss

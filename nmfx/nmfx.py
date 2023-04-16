@@ -5,7 +5,6 @@ from jax import random
 import numpy as np
 from time import time
 import optax
-from sklearn.decomposition._nmf import _initialize_nmf as initialize_nmf
 
 from .utils import sigmoid, log1pexp, order_factors, logexpm1
 from .parameters import Log
@@ -22,10 +21,11 @@ def nmf(
     parameters,
     taus=None,
     coordinates=None,
-    print_iter=20,
+    print_iter=100,
     initial_values=None,
     save_iter=None,
     save_path=None,
+    init="random",
 ):
     """NMF
 
@@ -45,9 +45,9 @@ def nmf(
         print("batch size greater than t - resetting batch size")
 
     if initial_values is None:
-        print("intializing values with nnsvd")
+        print(f"intializing values with {init}")
         t0 = time()
-        H, W = initialize_nmf(X, k, "nndsvd")
+        H, W = initialize(X, k, init)
         H = logexpm1(H)
         W = logexpm1(W)
         t1 = time()
@@ -82,7 +82,7 @@ def nmf(
     )
 
     H_prev = np.copy(H)
-    total_batch_num = np.int(np.round(t / parameters.batch_size))
+    total_batch_num = (np.round(t / parameters.batch_size)).astype("int")
     print(f"total batch num: {total_batch_num}")
 
     t0 = time()
@@ -92,7 +92,7 @@ def nmf(
         for i in range(parameters.max_iter):
             key, shuffle_key = random.split(key)
 
-            W, opt_state_W, grad_H, loss_batch = update_W_batch_H_step(
+            W, opt_state_W, grad_H, loss_batch, loss_log = update_W_batch_H_step_jit(
                 X,
                 H,
                 W,
@@ -108,6 +108,7 @@ def nmf(
             grad_norm = np.linalg.norm(grad_H)
             log.total_loss.append(loss_batch)
             log.grad_norm.append(grad_norm)
+            log.spatial_loss.append(np.array(loss_log))
 
             updates_H, opt_state_H = optimizer_H.update(grad_H, opt_state_H, H)
             H = optax.apply_updates(H, updates_H)
@@ -121,7 +122,6 @@ def nmf(
 
             if i % print_iter == 0:
                 print(statement)
-                print("log1pexp")
                 print(log1pexp(H).max(), log1pexp(W).max())
 
             if save_iter is not None:
@@ -133,6 +133,7 @@ def nmf(
                     results["taus"] = taus
                     results["ite"] = i
                     results["loss"] = log.total_loss
+                    results["loss_log"] = log.spatial_loss
                     np.save(save_path + f"_ite_{i:05d}.npy", results)
                     print("intermediate results saved")
 
@@ -159,6 +160,6 @@ def nmf(
     W = log1pexp(W)
 
     ### normalize and order factors by norm
-    H, W = order_factors(H, W)
+    # H, W = order_factors(H, W)
 
     return np.array(H), np.array(W), log

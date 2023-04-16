@@ -4,6 +4,7 @@ from .utils import log1pexp
 from .kernels import build_K
 from .kernels import compute_wKiw
 from typing import Tuple
+import jax
 
 
 def compute_spatial_prior_loss(W, taus, coordinates) -> jnp.array:
@@ -33,7 +34,6 @@ def compute_spatial_loss_coefficients(taus, coordinates) -> jnp.array:
 
 
 def compute_W_loss(W, batch_X, batch_H, parameters, spatial_loss_coefficients=None):
-
     k, d = W.shape
     t, _ = batch_X.shape
 
@@ -53,16 +53,16 @@ def compute_W_loss(W, batch_X, batch_H, parameters, spatial_loss_coefficients=No
         spatial_penalty = (
             (spatial_loss_coefficients * w_dist).sum() / k / d * parameters.l2_space
         )
-        # print(f"spatial_penalty: {spatial_penalty}")
         loss += spatial_penalty
 
-    return loss
+    losses_log = [reconstruction_loss, spatial_penalty]
+
+    return loss, losses_log  # loss and auxiliary data
 
 
 def compute_batch_H_loss(
     batch_H, batch_X, W, parameters, spatial_loss_coefficients=None
 ):
-
     k, d = W.shape
     t, _ = batch_X.shape
 

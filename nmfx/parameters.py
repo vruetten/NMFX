@@ -49,3 +49,4 @@ class Log:
         self.reconstruction_loss = []
         self.total_loss = []
         self.grad_norm = []
+        self.spatial_loss = []

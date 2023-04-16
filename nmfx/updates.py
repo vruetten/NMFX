@@ -9,12 +9,12 @@ import jax.numpy as jnp
 def update_W_step(
     W, optimizer_W, opt_state_W, batch_X, batch_H, parameters, spatial_loss_coefficients
 ):
-    loss_W, grad_W = jax.value_and_grad(compute_W_loss)(
+    (loss_W, loss_log), grad_W = jax.value_and_grad(compute_W_loss, has_aux=True)(
         W, batch_X, batch_H, parameters, spatial_loss_coefficients
     )
     updates, opt_state_W = optimizer_W.update(grad_W, opt_state_W, W)
     W = optax.apply_updates(W, updates)
-    return W, opt_state_W, loss_W
+    return W, opt_state_W, loss_W, loss_log
 
 
 def update_W_batch_H_step(
@@ -29,7 +29,7 @@ def update_W_batch_H_step(
     total_batch_num,
     shuffle_key,
 ):
-    print("compiling update function")
+    # print("compiling update function")
     t, d = X.shape
 
     shuffled_indices = jnp.arange(t)
@@ -47,7 +47,7 @@ def update_W_batch_H_step(
             batch_H, batch_X, W, parameters, spatial_loss_coefficients
         )  # compute grad w.r.t to H
 
-        W, opt_state_W, loss_batch = update_W_step(
+        W, opt_state_W, loss_batch, loss_log = update_W_step(
             W,
             optimizer_W,
             opt_state_W,
@@ -65,4 +65,4 @@ def update_W_batch_H_step(
         jnp.argsort(shuffled_indices).squeeze()
     ]  # reorder gradients
 
-    return W, opt_state_W, grad_H, loss_batch
+    return W, opt_state_W, grad_H, loss_batch, loss_log

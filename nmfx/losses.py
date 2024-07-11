@@ -44,16 +44,21 @@ def compute_W_loss(W, batch_X, batch_H, parameters, spatial_loss_coefficients=No
 
     reconstruction_loss = jnp.linalg.norm(reconstruction - batch_X) / t / d
 
-    l1_loss = jnp.abs(W_pos).mean() * parameters.l1_W
+    if parameters.l1_W > 0:
+        l1_loss = jnp.abs(W_pos).mean() * parameters.l1_W
+    else:
+        l1_loss = 0
 
     loss = reconstruction_loss + l1_loss
 
-    if spatial_loss_coefficients is not None:
+    if (parameters.l2_space > 0) & (spatial_loss_coefficients is not None):
         w_dist = (W_pos[:, None] - W_pos[:, :, None]) ** 2
         spatial_penalty = (
             (spatial_loss_coefficients * w_dist).sum() / k / d * parameters.l2_space
         )
         loss += spatial_penalty
+    else:
+        spatial_penalty = 0
 
     losses_log = [reconstruction_loss, spatial_penalty]
 
@@ -73,11 +78,14 @@ def compute_batch_H_loss(
 
     reconstruction_loss = jnp.linalg.norm(reconstruction - batch_X) / t / d
 
-    l1_loss = jnp.abs(W_pos).mean() * parameters.l1_W
+    if parameters.l1_W > 0:
+        l1_loss = jnp.abs(W_pos).mean() * parameters.l1_W
+    else:
+        l1_loss = 0
 
     loss = reconstruction_loss + l1_loss
 
-    if spatial_loss_coefficients is not None:
+    if (parameters.l2_space > 0) & (spatial_loss_coefficients is not None):
         w_dist = (W_pos[:, None] - W_pos[:, :, None]) ** 2
         spatial_penalty = (
             (spatial_loss_coefficients * w_dist).sum() / k / d * parameters.l2_space

@@ -4,73 +4,76 @@ import numpy as np
 from nmfx.parameters import Parameters
 from pathlib import Path
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 parser = argparse.ArgumentParser()
 
 parser.add_argument(
-    '--data_path',
-    '-dp',
+    "--data_path", "-dp", type=str, help="path to numpy array containing data (txn)"
+)
+
+parser.add_argument(
+    "--coordinate_path",
+    "-cp",
+    default=None,
     type=str,
-    help="path to numpy array containing data (txn)")
+    help="path to numpy array containing coordinates (nx3)",
+)
 
 parser.add_argument(
-    '--k',
-    '-k',
-    type=int,
-    default=20,
-    help="Number of components to extract")
+    "--k", "-k", type=int, default=20, help="Number of components to extract"
+)
 
 parser.add_argument(
-    '--l1_W',
-    '-l1',
+    "--l1_W",
+    "-l1",
     type=float,
     default=0,
-    help="l1 loss to be applied to weight matrix W")
+    help="l1 loss to be applied to weight matrix W",
+)
 
 parser.add_argument(
-    '--max_iter',
-    '-max_i',
+    "--l2_space",
+    "-l2_space",
+    type=float,
+    default=0,
+    help="l2 spatial loss",
+)
+
+parser.add_argument(
+    "--max_iter",
+    "-max_i",
     type=float,
     default=20000,
-    help="maximum number of iterations")
+    help="maximum number of iterations",
+)
 
 parser.add_argument(
-    '--min_loss',
-    '-min_l',
+    "--min_loss",
+    "-min_l",
     type=float,
     default=1e-2,
-    help="minimum loss for convergence")
+    help="minimum loss for convergence",
+)
+
+parser.add_argument("--batch_size", "-bs", type=int, default=200, help="batch_size")
+
+parser.add_argument("--step_size", "-ss", type=float, default=1e-2, help="step size")
 
 parser.add_argument(
-    '--batch_size',
-    '-bs',
-    type=int,
-    default=200,
-    help="batch_size")
-
-parser.add_argument(
-    '--step_size',
-    '-ss',
-    type=float,
-    default=1e-2,
-    help="step size")
-
-parser.add_argument(
-    '--save_path',
-    '-sp',
-    type=str,
-    default=None,
-    help="path where to save results")
+    "--save_path", "-sp", type=str, default=None, help="path where to save results"
+)
 
 args = parser.parse_args()
 
 if args.save_path is None:
-    args.save_path = str(Path(args.data_path).parent) + '/nmfx_results.npy'
+    args.save_path = str(Path(args.data_path).parent) + "/nmfx_results.npy"
 
 ### initialize parameters
 parameters = Parameters()
 parameters.l1_W = args.l1_W
+parameters.l2_space = args.l2_space
 parameters.max_iter = args.max_iter
 parameters.min_loss = args.min_loss
 parameters.batch_size = args.batch_size
@@ -78,31 +81,38 @@ parameters.step_size = args.step_size
 
 ### initialize results dictionary
 results = vars(parameters)
-results['k'] = args.k
-results['data_path'] = args.data_path
+results["k"] = args.k
+results["data_path"] = args.data_path
 
 ### load data
 X = np.load(args.data_path)
-t, d, = X.shape
-print('data loaded')
-print(f't: {t}, d: {d}')
+coordinates = np.load(args.coordinate_path)
 
-results['t'] = t
-results['d'] = d
+(
+    t,
+    d,
+) = X.shape
+print("data loaded")
+print(f"t: {t}, d: {d}")
+
+results["t"] = t
+results["d"] = d
 
 
 ### normalize data
 X_min = np.min(X)
-if X_min<0: 
-    print(f'xmin: {X_min}')
-    X -= X_min # force to positive values
+if X_min < 0:
+    print(f"xmin: {X_min}")
+    X -= X_min  # force to positive values
 
 ### run nmfx
-H, W, log = nmfx.nmf(X, args.k, parameters)
+taus = np.linspace(0.001, 0.1, args.k)[::-1]
+H, W, log = nmfx.nmf(
+    X=X, k=args.k, parameters=parameters, taus=taus, coordinates=coordinates
+)
 
-results['H'] = H
-results['W'] = W
-results['loss'] = log.total_loss
+results["H"] = H
+results["W"] = W
+results["loss"] = log.total_loss
 
 np.save(args.save_path, results)
-

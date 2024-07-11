@@ -31,7 +31,8 @@ def generate_toy_data(dim, k, t):
         )
     ).squeeze()
     H = log1pexp(np.random.randn(t, k))
-    X = H @ Wkd + log1pexp(np.random.randn(t, dim * dim) * 0.0001)
+    X = H @ Wkd
+    # + log1pexp(np.random.randn(t, dim * dim) * 0.00001)
     return X, H, Wkd, taus, coords
 
 

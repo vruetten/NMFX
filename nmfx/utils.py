@@ -1,8 +1,8 @@
 import jax.numpy as jnp
 
 
-log1pexp = lambda x: jnp.log1p(jnp.exp(x)) # exponentiate to make positive, then np.log(1+x)
-logexpm1 = lambda x: jnp.log(jnp.expm1(x))
+log1pexp = lambda x: jnp.log1p(jnp.exp(x)) # exponentiate to make positive, then np.log(1+x) -> forces it to be positive
+logexpm1 = lambda x: jnp.log(jnp.expm1(x)) 
 
 
 def sigmoid(Z):
